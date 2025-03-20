@@ -1,0 +1,4 @@
+instagrapi
+python-dotenv
+discord.py
+schedule
