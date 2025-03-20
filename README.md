@@ -6,3 +6,4 @@ bot discord permettant d'envoyer des images et leur description sur le serveur, 
 
 ## Commandes
 !dump : affiche les images restantes et leur nombre total
+!delete <nom de l'image> : supprime l'image et sa description
