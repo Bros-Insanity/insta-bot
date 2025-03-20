@@ -95,8 +95,6 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.channel.id == channel_id and message.author != client.user:
-        assert channel_id == message.channel.id
-
         if message.content == "!dump":
             msg = ""
             if len(os.listdir(image_folder)) > 0:
@@ -107,7 +105,7 @@ async def on_message(message):
             else:
                 await message.channel.send("No images remaining !")
 
-        if message.content.startswith("!delete") and len(message.content.split()) == 2:
+        if len(message.content.split()) == 2 and "!delete" == message.content.split()[0]:
             if len(os.listdir(image_folder)) > 0:
                 filename = message.content.split(" ")[1]
                 if os.path.exists(os.path.join(image_folder, filename)):
