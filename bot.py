@@ -105,12 +105,22 @@ async def on_message(message):
             else:
                 await message.channel.send("No images remaining !")
 
+        if message.content == "!dump_txt":
+            msg = ""
+            if len(os.listdir(desc_folder)) > 0:
+                for file in os.listdir(desc_folder):
+                    msg += f"{file}\n"
+                msg += f"Total : {len(os.listdir(desc_folder))}\n"
+                await message.channel.send(msg)
+            else:
+                await message.channel.send("No images remaining !")
+
         if len(message.content.split()) == 2 and "!delete" == message.content.split()[0]:
             if len(os.listdir(image_folder)) > 0:
                 filename = message.content.split(" ")[1]
                 if os.path.exists(os.path.join(image_folder, filename)):
                     os.remove(os.path.join(image_folder, filename))
-                    os.remove(os.path.join(desc_folder, filename))
+                    os.remove(os.path.join(desc_folder, filename.split(".")[0] + ".txt"))
                     await message.channel.send(f"Deleted {filename}")
                 else:
                     await message.channel.send("Image not found !")
