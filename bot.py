@@ -142,6 +142,14 @@ async def on_message(message):
             else:
                 await message.channel.send("No images remaining !")
 
+        if message.content == "!delete_all":
+            for image in os.listdir(image_folder):
+                os.remove(os.path.join(image_folder, image))
+            await message.channel.send("Deleted all images !")
+            for image in os.listdir(desc_folder):
+                os.remove(os.path.join(desc_folder, image))
+            await message.channel.send("Deleted all descriptions !")
+
         if len(message.content.split()) == 2 and "!delete" == message.content.split()[0]:
             if len(os.listdir(image_folder)) > 0:
                 filename = message.content.split(" ")[1]
