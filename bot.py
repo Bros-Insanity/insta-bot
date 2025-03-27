@@ -8,6 +8,7 @@ import asyncio
 import glob
 import datetime
 from PIL import Image
+from sage.dynamics.arithmetic_dynamics.endPN_automorphism_group import height_bound
 
 load_dotenv()
 
@@ -30,26 +31,20 @@ os.makedirs(desc_folder, exist_ok=True)
 
 def resize(image_path):
     image = Image.open(image_path)
-
     width, height = image.size
+
+    new_width = width
+    new_height = height
+
     if width > height:
-        target_ratio = (1.91, 1)
+        if width/height > 1.91:
+            new_width = width
+            new_height = width / 1.91
     else:
-        target_ratio = (4, 5)
-    target_width, target_height = target_ratio
-
-    current_ratio = width / height
-    target_ratio_value = target_width / target_height
-
-    if current_ratio > target_ratio_value:
-        new_width = width
-        new_height = width/target_width
-    elif current_ratio < target_ratio_value:
-        new_width = height/target_height
-        new_height = height
-    else:
-        new_width = width
-        new_height = height
+        target_width, target_height = (1, 1.2)
+        if height/width > 1.2:
+            new_width = height / 1.2
+            new_height = height
 
     new_width = int(new_width)
     new_height = int(new_height)
