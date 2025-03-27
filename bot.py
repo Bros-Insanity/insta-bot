@@ -8,7 +8,6 @@ import asyncio
 import glob
 import datetime
 from PIL import Image
-from sage.dynamics.arithmetic_dynamics.endPN_automorphism_group import height_bound
 
 load_dotenv()
 
