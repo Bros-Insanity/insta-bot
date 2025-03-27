@@ -28,18 +28,42 @@ os.makedirs(image_folder, exist_ok=True)
 desc_folder = "desc"
 os.makedirs(desc_folder, exist_ok=True)
 
-def square(image_path):
+def resize(image_path):
     image = Image.open(image_path)
+
     width, height = image.size
-    new_size = max(width, height)
-    new_image = Image.new("RGB", (new_size, new_size), "white")
+    if width > height:
+        target_ratio = (1.91, 1)
+    else:
+        target_ratio = (4, 5)
+    target_width, target_height = target_ratio
 
-    left = (new_size - width) // 2
-    top = (new_size - height) // 2
+    current_ratio = width / height
+    target_ratio_value = target_width / target_height
 
-    new_image.paste(image, (left, top))
-    new_image.save(image_path)
-    return width, height, new_image.width, new_image.height
+    if current_ratio > target_ratio_value:
+        new_width = int(height * target_ratio_value)
+        new_height = height
+    elif current_ratio < target_ratio_value:
+        new_width = width
+        new_height = int(width / target_ratio_value)
+    else:
+        new_width = width
+        new_height = height
+
+    if new_width != width or new_height != height:
+        new_image = Image.new("RGB", (new_width, new_height), "white")
+
+        left = (new_width - width) // 2
+        top = (new_height - height) // 2
+
+        new_image.paste(image, (left, top))
+
+        new_image.save(image_path)
+
+        return width, height, new_image.width, new_image.height
+    else:
+        return width, height, width, height
 
 async def post_image_to_instagram():
     channel = client.get_channel(channel_id)
@@ -138,7 +162,7 @@ async def on_message(message):
                     with open(desc_path, "w") as desc:
                         desc.write(message.content)
                     await message.channel.send("Description saved to folder")
-                    w1, h1, w2, h2 = square(image_path)
+                    w1, h1, w2, h2 = resize(image_path)
                     await message.channel.send(f"Resized image from {w1}x{h1} to {w2}x{h2}")
 
 client.run(discord_token)
