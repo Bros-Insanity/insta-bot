@@ -42,11 +42,11 @@ def resize(image_path):
     target_ratio_value = target_width / target_height
 
     if current_ratio > target_ratio_value:
-        new_width = int(height * target_ratio_value)
-        new_height = height
-    elif current_ratio < target_ratio_value:
         new_width = width
-        new_height = int(width / target_ratio_value)
+        new_height = width/target_width
+    elif current_ratio < target_ratio_value:
+        new_width = height/target_height
+        new_height = height
     else:
         new_width = width
         new_height = height
