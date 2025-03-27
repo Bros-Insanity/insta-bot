@@ -51,6 +51,9 @@ def resize(image_path):
         new_width = width
         new_height = height
 
+    new_width = int(new_width)
+    new_height = int(new_height)
+
     if new_width != width or new_height != height:
         new_image = Image.new("RGB", (new_width, new_height), "white")
 
