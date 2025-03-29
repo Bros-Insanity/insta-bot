@@ -28,18 +28,38 @@ os.makedirs(image_folder, exist_ok=True)
 desc_folder = "desc"
 os.makedirs(desc_folder, exist_ok=True)
 
-def square(image_path):
+def resize(image_path):
     image = Image.open(image_path)
     width, height = image.size
-    new_size = max(width, height)
-    new_image = Image.new("RGB", (new_size, new_size), "white")
 
-    left = (new_size - width) // 2
-    top = (new_size - height) // 2
+    new_width = width
+    new_height = height
 
-    new_image.paste(image, (left, top))
-    new_image.save(image_path)
-    return width, height, new_image.width, new_image.height
+    if width > height:
+        if width/height > 1.91:
+            new_width = width
+            new_height = width / 1.91
+    else:
+        if height/width > 1.2:
+            new_width = height / 1.2
+            new_height = height
+
+    new_width = int(new_width)
+    new_height = int(new_height)
+
+    if new_width != width or new_height != height:
+        new_image = Image.new("RGB", (new_width, new_height), "white")
+
+        left = (new_width - width) // 2
+        top = (new_height - height) // 2
+
+        new_image.paste(image, (left, top))
+
+        new_image.save(image_path)
+
+        return width, height, new_image.width, new_image.height
+    else:
+        return width, height, width, height
 
 async def post_image_to_instagram():
     channel = client.get_channel(channel_id)
@@ -115,6 +135,14 @@ async def on_message(message):
             else:
                 await message.channel.send("No images remaining !")
 
+        if message.content == "!delete_all":
+            for image in os.listdir(image_folder):
+                os.remove(os.path.join(image_folder, image))
+            await message.channel.send("Deleted all images !")
+            for image in os.listdir(desc_folder):
+                os.remove(os.path.join(desc_folder, image))
+            await message.channel.send("Deleted all descriptions !")
+
         if len(message.content.split()) == 2 and "!delete" == message.content.split()[0]:
             if len(os.listdir(image_folder)) > 0:
                 filename = message.content.split(" ")[1]
@@ -138,7 +166,7 @@ async def on_message(message):
                     with open(desc_path, "w") as desc:
                         desc.write(message.content)
                     await message.channel.send("Description saved to folder")
-                    w1, h1, w2, h2 = square(image_path)
+                    w1, h1, w2, h2 = resize(image_path)
                     await message.channel.send(f"Resized image from {w1}x{h1} to {w2}x{h2}")
 
 client.run(discord_token)
