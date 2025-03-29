@@ -40,7 +40,6 @@ def resize(image_path):
             new_width = width
             new_height = width / 1.91
     else:
-        target_width, target_height = (1, 1.2)
         if height/width > 1.2:
             new_width = height / 1.2
             new_height = height
