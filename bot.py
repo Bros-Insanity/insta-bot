@@ -15,7 +15,6 @@ cl = Client()
 
 username = os.getenv("INSTAGRAM_USERNAME")
 password = os.getenv("INSTAGRAM_PASSWORD")
-cl.login(username, password)
 
 discord_token = os.getenv("DISCORD_TOKEN")
 channel_id = int(os.getenv("DISCORD_CHANNEL_ID"))
@@ -109,7 +108,11 @@ async def run_scheduler():
 async def on_ready():
     channel = client.get_channel(channel_id)
     if channel:
-        await channel.send("Bot is ready !")
+        await channel.send("Bot is ready and connected to Instagram !")
+    try:
+        cl.login(username, password)
+    except Exception as e:
+        await channel.send("Instagram login failed : " + str(e))
     client.loop.create_task(run_scheduler())
 
 @client.event
@@ -160,7 +163,7 @@ async def on_message(message):
                 if attachment.content_type.startswith('image/'):
                     image_path = os.path.join(image_folder, attachment.filename)
                     await attachment.save(image_path)
-                    await message.channel.send("Image saved to folder")
+                    await message.channel.send(f"Image {attachment.filename} saved to folder")
                     desc_name = os.path.splitext(os.path.basename(image_path))[0] + ".txt"
                     desc_path = os.path.join(desc_folder, desc_name)
                     with open(desc_path, "w") as desc:

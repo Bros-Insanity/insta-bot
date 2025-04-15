@@ -1,5 +1,5 @@
 # insta-bot
-![GitHub](https://img.shields.io/badge/Version-0.3-purple) ![GitHub](https://img.shields.io/badge/License-MIT-blue) ![GitHub](https://img.shields.io/badge/Status-Broken-red) ![GitHub](https://img.shields.io/badge/Tests-Failing-red)
+![GitHub](https://img.shields.io/badge/Version-0.3.1-purple) ![GitHub](https://img.shields.io/badge/License-MIT-blue) ![GitHub](https://img.shields.io/badge/Status-Broken-red) ![GitHub](https://img.shields.io/badge/Tests-Failing-red)
 
 Discord bot for sending images and their descriptions to the server, and posting one randomly each day on Instagram at a random time between 8 AM and 7 PM.
 
@@ -26,3 +26,7 @@ If the image exceeds the Instagram's maximum ratios ((4:5) or (1,91:1)), the ima
 - Instagram posting : passing
 
 Bot tested on a Debian 12 server
+
+## Version changelog
+- Added image name display when image is sent
+- Added message sent by the bot in the channel when Instagram login failed
