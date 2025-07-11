@@ -1,6 +1,5 @@
 import os
 import random
-import schedule
 from instagrapi import Client
 from dotenv import load_dotenv
 import discord
@@ -21,11 +20,28 @@ channel_id = int(os.getenv("DISCORD_CHANNEL_ID"))
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
-image_folder = "img"
-os.makedirs(image_folder, exist_ok=True)
+media_folder = "media"
+os.makedirs(media_folder, exist_ok=True)
 
 desc_folder = "desc"
 os.makedirs(desc_folder, exist_ok=True)
+
+
+def get_file_type(file_path):
+    if not os.path.exists(file_path):
+        return 'unknown'
+
+    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.webp', '.svg', '.ico', '.heic', '.heif'}
+    video_extensions = {'.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v', '.3gp', '.ogv', '.ts', '.mts', '.m2ts'}
+
+    file_extension = os.path.splitext(file_path)[1].lower()
+
+    if file_extension in image_extensions:
+        return 'image'
+    elif file_extension in video_extensions:
+        return 'video'
+    else:
+        return 'unknown'
 
 def resize(image_path):
     image = Image.open(image_path)
@@ -53,7 +69,6 @@ def resize(image_path):
         top = (new_height - height) // 2
 
         new_image.paste(image, (left, top))
-
         new_image.save(image_path)
 
         return width, height, new_image.width, new_image.height
@@ -62,7 +77,7 @@ def resize(image_path):
 
 async def post_image_to_instagram():
     channel = client.get_channel(channel_id)
-    image_files = glob.glob(os.path.join(image_folder, '*'))
+    image_files = glob.glob(os.path.join(media_folder, '*'))
 
     if image_files:
         image_path = random.choice(image_files)
@@ -82,27 +97,49 @@ async def post_image_to_instagram():
     else:
         await channel.send("No image remaining !")
 
-def schedule_random_post():
-    schedule.clear()
+def get_random_post_time():
+    now = datetime.datetime.now()
+    today = now.date()
 
-    start_time = datetime.time(8, 0)
-    end_time = datetime.time(19, 0)
-    random_time = datetime.datetime.combine(datetime.date.today(), start_time) + datetime.timedelta(
-        seconds=random.randint(0, (datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time)).seconds)
-    )
+    if now.time() > datetime.time(19, 0):
+        today = today + datetime.timedelta(days=1)
 
-    schedule.every().day.at(random_time.strftime("%H:%M")).do(lambda: asyncio.run_coroutine_threadsafe(post_image_to_instagram(), client.loop))
-    schedule.every().day.at("07:00").do(lambda: asyncio.run_coroutine_threadsafe(schedule_random_post_wrapper(), client.loop))
+    start_seconds = 8 * 3600
+    end_seconds = 19 * 3600
+    random_seconds = random.randint(start_seconds, end_seconds)
 
-async def schedule_random_post_wrapper():
-    schedule_random_post()
+    random_time = datetime.datetime.combine(today, datetime.time(0, 0)) + datetime.timedelta(seconds=random_seconds)
+    return random_time
 
-schedule_random_post()
+async def schedule_next_post():
+    global next_post_time
 
-async def run_scheduler():
+    next_post_time = get_random_post_time()
+    channel = client.get_channel(channel_id)
+
+    if channel:
+        await channel.send(f"Next post scheduled for: {next_post_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+async def scheduler_loop():
+    global next_post_time
+
+    await schedule_next_post()
+
     while True:
-        schedule.run_pending()
-        await asyncio.sleep(1)
+        try:
+            now = datetime.datetime.now()
+
+            if next_post_time and now >= next_post_time:
+                await post_image_to_instagram()
+                await schedule_next_post()
+
+            await asyncio.sleep(60)
+
+        except Exception as e:
+            channel = client.get_channel(channel_id)
+            if channel:
+                await channel.send(f"Scheduler error: {str(e)}")
+            await asyncio.sleep(60)
 
 @client.event
 async def on_ready():
@@ -113,20 +150,55 @@ async def on_ready():
         cl.login(username, password)
     except Exception as e:
         await channel.send("Instagram login failed : " + str(e))
-    client.loop.create_task(run_scheduler())
+    scheduler_task = asyncio.create_task(scheduler_loop())
 
 @client.event
 async def on_message(message):
     if message.channel.id == channel_id and message.author != client.user:
         if message.content == "!dump":
+            tot, tot_img, tot_vid = 0, 0, 0
+            msg_img, msg_vid = "", ""
+            if len(os.listdir(media_folder)) > 0:
+                for file in os.listdir(media_folder):
+                    if get_file_type(os.path.join(media_folder, file)) == "image":
+                        msg_img += f"{file}\n"
+                        tot_img += 1
+                    elif get_file_type(os.path.join(media_folder, file)) == "video":
+                        msg_vid += f"{file}\n"
+                        tot_vid += 1
+                msg_img += f"Total : {tot_img}\n"
+                msg_vid += f"Total : {tot_vid}\n"
+                msg = msg_img + msg_vid
+                await message.channel.send(msg)
+            else:
+                await message.channel.send("No media remaining !")
+
+        if message.content == "!dump_img":
+            tot = 0
             msg = ""
-            if len(os.listdir(image_folder)) > 0:
-                for file in os.listdir(image_folder):
-                    msg += f"{file}\n"
-                msg += f"Total : {len(os.listdir(image_folder))}\n"
+            if len(os.listdir(media_folder)) > 0:
+                for file in os.listdir(media_folder):
+                    if get_file_type(os.path.join(media_folder, file)) == "image":
+                        msg += f"{file}\n"
+                        tot += 1
+                msg += f"Total : {tot}\n"
                 await message.channel.send(msg)
             else:
                 await message.channel.send("No images remaining !")
+
+        if message.channel.id == channel_id and message.author != client.user:
+            if message.content == "!dump_vid":
+                tot = 0
+                msg = ""
+                if len(os.listdir(media_folder)) > 0:
+                    for file in os.listdir(media_folder):
+                        if get_file_type(os.path.join(media_folder, file)) == "video":
+                            msg += f"{file}\n"
+                            tot += 1
+                    msg += f"Total : {tot}\n"
+                    await message.channel.send(msg)
+                else:
+                    await message.channel.send("No videos remaining !")
 
         if message.content == "!dump_txt":
             msg = ""
@@ -139,18 +211,18 @@ async def on_message(message):
                 await message.channel.send("No images remaining !")
 
         if message.content == "!delete_all":
-            for image in os.listdir(image_folder):
-                os.remove(os.path.join(image_folder, image))
+            for image in os.listdir(media_folder):
+                os.remove(os.path.join(media_folder, image))
             await message.channel.send("Deleted all images !")
             for image in os.listdir(desc_folder):
                 os.remove(os.path.join(desc_folder, image))
             await message.channel.send("Deleted all descriptions !")
 
         if len(message.content.split()) == 2 and "!delete" == message.content.split()[0]:
-            if len(os.listdir(image_folder)) > 0:
+            if len(os.listdir(media_folder)) > 0:
                 filename = message.content.split(" ")[1]
-                if os.path.exists(os.path.join(image_folder, filename)):
-                    os.remove(os.path.join(image_folder, filename))
+                if os.path.exists(os.path.join(media_folder, filename)):
+                    os.remove(os.path.join(media_folder, filename))
                     os.remove(os.path.join(desc_folder, filename.split(".")[0] + ".txt"))
                     await message.channel.send(f"Deleted {filename}")
                 else:
@@ -161,15 +233,24 @@ async def on_message(message):
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith('image/'):
-                    image_path = os.path.join(image_folder, attachment.filename)
-                    await attachment.save(image_path)
+                    media_path = os.path.join(media_folder, attachment.filename)
+                    await attachment.save(media_path)
                     await message.channel.send(f"Image {attachment.filename} saved to folder")
-                    desc_name = os.path.splitext(os.path.basename(image_path))[0] + ".txt"
+                    desc_name = os.path.splitext(os.path.basename(media_path))[0] + ".txt"
                     desc_path = os.path.join(desc_folder, desc_name)
                     with open(desc_path, "w") as desc:
                         desc.write(message.content)
                     await message.channel.send("Description saved to folder")
-                    w1, h1, w2, h2 = resize(image_path)
+                    w1, h1, w2, h2 = resize(media_path)
                     await message.channel.send(f"Resized image from {w1}x{h1} to {w2}x{h2}")
+                elif attachment.content_type.startswith('video/'):
+                    media_path = os.path.join(media_folder, attachment.filename)
+                    await attachment.save(media_path)
+                    await message.channel.send(f"Video {attachment.filename} saved to folder")
+                    desc_name = os.path.splitext(os.path.basename(media_path))[0] + ".txt"
+                    desc_path = os.path.join(desc_folder, desc_name)
+                    with open(desc_path, "w") as desc:
+                        desc.write(message.content)
+                    await message.channel.send("Description saved to folder")
 
 client.run(discord_token)
