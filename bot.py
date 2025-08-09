@@ -146,6 +146,8 @@ async def on_ready():
     channel = client.get_channel(channel_id)
     if channel:
         await channel.send("Bot is ready and connected to Instagram !")
+    else:
+        print("Failed to connect to discord.")
     try:
         cl.login(username, password)
     except Exception as e:
@@ -166,8 +168,8 @@ async def on_message(message):
                     elif get_file_type(os.path.join(media_folder, file)) == "video":
                         msg_vid += f"{file}\n"
                         tot_vid += 1
-                msg_img += f"Total : {tot_img}\n"
-                msg_vid += f"Total : {tot_vid}\n"
+                msg_img += f"Total images : {tot_img}\n"
+                msg_vid += f"Total videos : {tot_vid}\n"
                 msg = msg_img + msg_vid
                 await message.channel.send(msg)
             else:
