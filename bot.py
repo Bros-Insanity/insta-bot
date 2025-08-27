@@ -129,8 +129,7 @@ async def scheduler_loop():
         try:
             now = datetime.datetime.now()
 
-            if next_post_time and now >= next_post_time and len(os.listdir(media_folder)) > 0:
-                print(len(os.listdir(media_folder)))
+            if next_post_time and now >= next_post_time and len(os.listdir(media_folder) > 0:
                 await post_image_to_instagram()
                 await schedule_next_post()
 
