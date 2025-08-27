@@ -1,5 +1,11 @@
+# IDE
 .idea/
 .vscode/
 
+# ENVS
 .env
 .venv/
+
+# local folders
+media/
+desc/
