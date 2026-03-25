@@ -9,3 +9,6 @@
 # local folders
 media/
 desc/
+
+# test files
+image_hashes.json
