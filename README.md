@@ -49,6 +49,10 @@ If an image exceeds Instagram's maximum ratios (4:5 or 1.91:1), it will be autom
 Bot tested on an Alpine server.
 
 ## Version changelog
+### 0.5.1
+- Video upload bug fix
+- scheduler bug fix
+
 ### 0.5
 - Migrated all bot commands to Discord Slash Commands (`/`).
 - Implemented robust duplicate detection using perceptual hash for images and SHA256 for videos.

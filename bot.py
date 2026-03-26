@@ -341,16 +341,23 @@ async def post_image_to_instagram():
 
             try:
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(
-                    executor, cl.photo_upload, image_path, description
-                )
+                file_type = get_file_type(image_path)
+
+                if file_type == "video":
+                    await loop.run_in_executor(
+                        executor, cl.video_upload, image_path, description
+                    )
+                else:
+                    await loop.run_in_executor(
+                        executor, cl.photo_upload, image_path, description
+                    )
+
                 await channel.send(f"Posted {filename} to Instagram")
             except Exception as e:
                 await channel.send(f"Failed to post {filename}: {str(e)}")
                 return
 
             remove_image_hash(filename)
-
             os.remove(image_path)
             os.remove(desc_path)
             await channel.send(f"Deleted {filename} and description")
@@ -362,17 +369,22 @@ def get_random_post_time():
     now = datetime.datetime.now()
     today = now.date()
 
-    if now.time() > datetime.time(19, 0):
-        today = today + datetime.timedelta(days=1)
-
     start_seconds = 8 * 3600
     end_seconds = 19 * 3600
-    random_seconds = random.randint(start_seconds, end_seconds)
+    now_seconds = now.hour * 3600 + now.minute * 60 + now.second
 
-    random_time = datetime.datetime.combine(
-        today, datetime.time(0, 0)
-    ) + datetime.timedelta(seconds=random_seconds)
-    return random_time
+    if now_seconds >= end_seconds:
+        today = today + datetime.timedelta(days=1)
+        random_seconds = random.randint(start_seconds, end_seconds)
+    else:
+        min_seconds = max(start_seconds, now_seconds + 60)
+        if min_seconds >= end_seconds:
+            today = today + datetime.timedelta(days=1)
+            random_seconds = random.randint(start_seconds, end_seconds)
+        else:
+            random_seconds = random.randint(min_seconds, end_seconds)
+
+    return datetime.datetime.combine(today, datetime.time(0, 0)) + datetime.timedelta(seconds=random_seconds)
 
 
 async def schedule_next_post():
