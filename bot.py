@@ -45,6 +45,22 @@ hash_file = "image_hashes.json"
 
 next_post_time = None
 
+SESSION_FILE = "ig_session.json"
+
+
+def instagram_login():
+    if os.path.exists(SESSION_FILE):
+        cl.load_settings(SESSION_FILE)
+        try:
+            cl.login(username, password)
+            cl.get_timeline_feed()
+            return
+        except Exception as e:
+            print(f"Saved session invalid, falling back to fresh login: {e}")
+
+    cl.login(username, password)
+    cl.dump_settings(SESSION_FILE)
+
 
 def load_hashes():
     if os.path.exists(hash_file):
@@ -117,8 +133,9 @@ def remove_image_hash(filename):
 def sync_instagram_media_blocking():
     try:
         user_id = cl.user_id_from_username(username)
-
-        medias = cl.user_medias(user_id, amount=0) # 0 = all media
+        user_info = cl.user_info(user_id)
+        total_media = user_info.media_count
+        medias = cl.user_medias(user_id, amount=total_media)
 
         hashes = load_hashes()
         new_hashes = 0
@@ -599,7 +616,7 @@ async def upload(
 
             w1, h1, w2, h2 = resize(media_path)
             img_size_info = (
-                " and resized from {w1}x{h1} to {w2}x{h2}."
+                f" and resized from {w1}x{h1} to {w2}x{h2}."
                 if h1 == h2 and w1 == w2
                 else "."
             )
@@ -737,7 +754,7 @@ async def on_ready():
 
     try:
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(executor, cl.login, username, password)
+        await loop.run_in_executor(executor, instagram_login)
         print("Instagram login successful")
         if channel:
             await channel.send("Instagram login successful!")
